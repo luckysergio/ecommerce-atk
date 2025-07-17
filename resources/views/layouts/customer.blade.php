@@ -9,6 +9,9 @@
     <title>{{ $title ?? 'ATK Online' }}</title>
     @vite('resources/css/app.css')
     <link rel="stylesheet" href="https://unpkg.com/aos@2.3.4/dist/aos.css" />
+    <script src="//unpkg.com/alpinejs" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
     <style>
         html,
         body {

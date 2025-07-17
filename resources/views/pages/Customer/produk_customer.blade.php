@@ -79,7 +79,8 @@
                             </div>
                         @endif
 
-                        <button onclick="beliLangsung({{ $product->id }}, {{ $product->harga_jual }}, {{ $product->qty }})"
+                        <button
+                            onclick="beliLangsung({{ $product->id }}, {{ $product->harga_jual }}, {{ $product->qty }})"
                             class="bg-green-600 mt-2 text-white text-sm px-4 py-2 rounded w-full hover:bg-green-700 transition">
                             Beli Sekarang
                         </button>
@@ -112,18 +113,20 @@
             }
 
             fetch("{{ route('keranjang.tambah') }}", {
-                method: "POST",
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ product_id: productId })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    const container = document.getElementById(`keranjang-action-${productId}`);
-                    container.innerHTML = `
+                    method: "POST",
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        product_id: productId
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const container = document.getElementById(`keranjang-action-${productId}`);
+                        container.innerHTML = `
                         <div class="text-sm text-green-600 text-center">
                             ✅ Sudah di keranjang.<br>
                             <a href='{{ route('keranjang.index') }}' class='underline hover:text-green-700'>
@@ -131,20 +134,20 @@
                             </a>
                         </div>`;
 
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil!',
-                        text: 'Produk berhasil ditambahkan ke keranjang.',
-                        timer: 1500,
-                        showConfirmButton: false
-                    });
-                } else {
-                    Swal.fire('Gagal', 'Tidak bisa menambahkan ke keranjang.', 'error');
-                }
-            })
-            .catch(() => {
-                Swal.fire('Error', 'Terjadi kesalahan saat menambahkan.', 'error');
-            });
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: 'Produk berhasil ditambahkan ke keranjang.',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire('Gagal', 'Tidak bisa menambahkan ke keranjang.', 'error');
+                    }
+                })
+                .catch(() => {
+                    Swal.fire('Error', 'Terjadi kesalahan saat menambahkan.', 'error');
+                });
         }
 
         function beliLangsung(productId, harga, stok) {
@@ -163,43 +166,50 @@
             }
 
             Swal.fire({
-                title: 'Masukkan Jumlah Beli',
+                title: 'Masukkan Jumlah & Bukti Pembayaran',
                 html: `
-                    <input id="qty-input" type="number" min="1" max="${stok}" value="1"
-                        class="swal2-input" placeholder="Jumlah">
-                    <p id="total-harga" class="text-sm text-gray-600 mt-2">
-                        Total: Rp${harga.toLocaleString('id-ID')}
-                    </p>
+                    <input id="qty-input" type="number" min="1" max="${stok}" value="1" class="swal2-input" placeholder="Jumlah">
+                    <input type="file" id="bukti-input" class="swal2-file" accept="image/*">
+                    <p id="total-harga" class="text-sm text-gray-600 mt-2">Total: Rp${harga.toLocaleString('id-ID')}</p>
                 `,
                 focusConfirm: false,
                 preConfirm: () => {
                     const qty = parseInt(document.getElementById('qty-input').value);
+                    const buktiFile = document.getElementById('bukti-input').files[0];
+
                     if (!qty || qty <= 0 || qty > stok) {
                         Swal.showValidationMessage('Jumlah tidak valid atau melebihi stok');
                         return false;
                     }
 
+                    if (!buktiFile) {
+                        Swal.showValidationMessage('Silakan upload bukti pembayaran.');
+                        return false;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('product_id', productId);
+                    formData.append('qty', qty);
+                    formData.append('bukti_pembayaran', buktiFile);
+
                     return fetch("{{ route('keranjang.beliLangsung') }}", {
-                        method: "POST",
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            product_id: productId,
-                            qty: qty
+                            method: "POST",
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                                    .getAttribute('content'),
+                            },
+                            body: formData
                         })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.status !== 'success') {
-                            throw new Error(data.message);
-                        }
-                        return data;
-                    })
-                    .catch(err => {
-                        Swal.showValidationMessage(err.message);
-                    });
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status !== 'success') {
+                                throw new Error(data.message);
+                            }
+                            return data;
+                        })
+                        .catch(err => {
+                            Swal.showValidationMessage(err.message);
+                        });
                 },
                 didOpen: () => {
                     const input = document.getElementById('qty-input');

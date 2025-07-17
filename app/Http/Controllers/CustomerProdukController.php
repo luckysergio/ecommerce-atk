@@ -21,7 +21,7 @@ class CustomerProdukController extends Controller
             $query->where('id_merk', $request->merk);
         }
 
-        $products = $query->latest()->paginate(12)->withQueryString();
+        $products = $query->where('status', 'tersedia')->latest()->paginate(12)->withQueryString();
         $allJenis = Jenis::all();
         $allMerk = Merk::all();
 

@@ -35,6 +35,7 @@ class TransactionController extends Controller
     public function byStatus(Request $request, $status)
     {
         $allowedStatuses = ['pending', 'proses', 'siap diambil', 'selesai'];
+
         if (!in_array($status, $allowedStatuses)) {
             abort(404);
         }
@@ -54,7 +55,35 @@ class TransactionController extends Controller
 
         $transactions = $query->latest()->get();
 
-        return view("pages.transaksi.$viewName", compact('transactions', 'status', 'bulan', 'tahun'));
+        $allMonthlySummary = [];
+        $selectedYear = now()->year;
+
+        if (!$bulan && !$tahun && $status === 'selesai') {
+            $allMonthlySummary = Transaction::where('status', 'selesai')
+                ->whereYear('created_at', $selectedYear)
+                ->selectRaw('MONTH(created_at) as month, COUNT(*) as total')
+                ->groupByRaw('MONTH(created_at)')
+                ->orderBy('month')
+                ->pluck('total', 'month')
+                ->toArray();
+
+            for ($m = 1; $m <= 12; $m++) {
+                if (!isset($allMonthlySummary[$m])) {
+                    $allMonthlySummary[$m] = 0;
+                }
+            }
+
+            ksort($allMonthlySummary);
+        }
+
+        return view("pages.transaksi.$viewName", [
+            'transactions'        => $transactions,
+            'status'              => $status,
+            'bulan'               => $bulan,
+            'tahun'               => $tahun,
+            'allMonthlySummary'   => $allMonthlySummary,
+            'selectedYear'        => $selectedYear,
+        ]);
     }
 
     public function updateStatus($id, $status)

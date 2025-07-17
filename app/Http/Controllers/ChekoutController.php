@@ -15,26 +15,33 @@ class ChekoutController extends Controller
 {
     public function store(Request $request)
     {
-        $user = Auth::user();
+        $request->validate([
+            'bukti_pembayaran' => 'required|image|max:2048',
+        ]);
 
+        $user = Auth::user();
         if (!$user || !$user->customer) {
+            if ($request->expectsJson()) {
+                return response()->json(['status' => 'error', 'message' => 'Silakan login sebagai customer.']);
+            }
             return redirect()->route('login')->withErrors(['Silakan login sebagai customer.']);
         }
 
         $cart = Session::get('cart', []);
         if (empty($cart)) {
-            return back()->withErrors(['Keranjang kosong.']);
+            return response()->json(['status' => 'error', 'message' => 'Keranjang kosong.']);
         }
 
         DB::beginTransaction();
-
         try {
             $totalHarga = collect($cart)->sum(fn($item) => $item['harga'] * $item['qty']);
+            $path = $request->file('bukti_pembayaran')->store('bukti', 'public');
 
             $transaksi = Transaction::create([
                 'id_customer' => $user->customer->id,
                 'status' => 'pending',
                 'total_harga' => $totalHarga,
+                'bukti_pembayaran' => $path,
             ]);
 
             foreach ($cart as $idProduct => $item) {
@@ -49,7 +56,7 @@ class ChekoutController extends Controller
                     'id_product' => $idProduct,
                     'qty' => $item['qty'],
                     'total_harga' => $item['harga'] * $item['qty'],
-                    'catatan' => $request->catatan,
+                    'catatan' => null,
                 ]);
 
                 $product->decrement('qty', $item['qty']);
@@ -58,10 +65,17 @@ class ChekoutController extends Controller
             Session::forget('cart');
             DB::commit();
 
-            return back()->with('success', 'Transaksi berhasil dibuat.');
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Transaksi berhasil!',
+                'redirect' => route('pesanan.customer'),
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['Terjadi kesalahan saat checkout: ' . $e->getMessage()]);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal melakukan checkout: ' . $e->getMessage(),
+            ]);
         }
     }
 
@@ -70,6 +84,8 @@ class ChekoutController extends Controller
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'qty' => 'required|integer|min:1',
+            'bukti_pembayaran' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'catatan' => 'nullable|string',
         ]);
 
         $user = Auth::user();
@@ -86,10 +102,13 @@ class ChekoutController extends Controller
         try {
             $total = $product->harga_jual * $request->qty;
 
+            $buktiPath = $request->file('bukti_pembayaran')->store('bukti', 'public');
+
             $transaksi = Transaction::create([
                 'id_customer' => $user->customer->id,
                 'status' => 'pending',
                 'total_harga' => $total,
+                'bukti_pembayaran' => $buktiPath,
             ]);
 
             DetailTransaction::create([
@@ -103,7 +122,11 @@ class ChekoutController extends Controller
             $product->decrement('qty', $request->qty);
 
             DB::commit();
-            return response()->json(['status' => 'success', 'message' => 'Transaksi berhasil.', 'redirect' => route('pesanan.customer')]);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Transaksi berhasil.',
+                'redirect' => route('pesanan.customer')
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json(['status' => 'error', 'message' => 'Gagal: ' . $e->getMessage()]);

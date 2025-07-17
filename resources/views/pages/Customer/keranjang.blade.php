@@ -77,15 +77,13 @@
                     Checkout
                 </button>
             </div>
-
-            <form id="checkout-form" action="{{ route('checkout.store') }}" method="POST" class="hidden">
-                @csrf
-            </form>
         @endif
     </div>
 @endsection
 
 @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
         const formatter = new Intl.NumberFormat('id-ID');
 
@@ -133,9 +131,9 @@
                     form.method = 'POST';
                     form.action = url;
                     form.innerHTML = `
-                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="_method" value="DELETE">
-                `;
+                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="_method" value="DELETE">
+                    `;
                     document.body.appendChild(form);
                     form.submit();
                 }
@@ -160,19 +158,51 @@
             Swal.fire({
                 title: 'Konfirmasi Checkout',
                 html: `
-                <p class="mb-2">Apakah kamu yakin ingin melanjutkan pembelian ini?</p>
-                <div class="text-left font-medium">${detail}</div>
-                <div class="mt-2 font-bold text-blue-600">Total: Rp${formatter.format(total)}</div>
-            `,
-                icon: 'question',
+                    <p class="mb-2">Upload bukti pembayaran untuk checkout:</p>
+                    <div class="text-left font-medium mb-2">${detail}</div>
+                    <div class="mb-2 font-bold text-blue-600">Total: Rp${formatter.format(total)}</div>
+                    <input type="file" id="buktiPembayaranInput" accept="image/*" class="swal2-file">
+                `,
                 showCancelButton: true,
-                confirmButtonColor: '#22c55e',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Ya, Checkout!',
-                cancelButtonText: 'Batal'
+                confirmButtonText: 'Checkout Sekarang',
+                cancelButtonText: 'Batal',
+                preConfirm: () => {
+                    const file = document.getElementById('buktiPembayaranInput').files[0];
+                    if (!file) {
+                        Swal.showValidationMessage('Silakan upload bukti pembayaran!');
+                        return false;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('_token', '{{ csrf_token() }}');
+                    formData.append('bukti_pembayaran', file);
+
+                    return fetch("{{ route('checkout.store') }}", {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status !== 'success') {
+                                throw new Error(data.message);
+                            }
+                            return data;
+                        })
+                        .catch(err => {
+                            Swal.showValidationMessage(err.message);
+                        });
+                }
             }).then(result => {
-                if (result.isConfirmed) {
-                    document.getElementById('checkout-form').submit();
+                if (result.isConfirmed && result.value?.status === 'success') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: result.value.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.href = "{{ route('pesanan.customer') }}";
+                    });
                 }
             });
         }

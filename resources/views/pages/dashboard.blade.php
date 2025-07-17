@@ -54,11 +54,11 @@
                     bg-gradient-to-br from-[#2c3e50] to-[#3498db] text-white 
                     p-6 rounded-2xl shadow-lg hover:shadow-xl transition-transform duration-200 hover:-translate-y-1">
 
-                {{-- @if ($countSelesai > 0)
+                @if ($countSelesai > 0)
                     <span class="absolute top-3 right-4 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
                         {{ $countSelesai }}
                     </span>
-                @endif --}}
+                @endif
 
                 <i class="fas fa-clipboard-check fa-3x mb-4"></i>
                 <h3 class="text-base font-semibold">Order Selesai</h3>

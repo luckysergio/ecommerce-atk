@@ -70,22 +70,33 @@
                             @endforeach
                         </ul>
 
-                        <div class="text-right font-semibold text-lg mb-4">
+                        @if ($transaksi->bukti_pembayaran)
+                            <div class="mb-3 text-center">
+                                <p class="text-sm font-medium mb-1">Bukti Pembayaran:</p>
+                                <a href="{{ asset('storage/' . $transaksi->bukti_pembayaran) }}" target="_blank">
+                                    <img src="{{ asset('storage/' . $transaksi->bukti_pembayaran) }}" alt="Bukti Pembayaran"
+                                        class="w-32 h-32 mx-auto object-cover rounded border border-white hover:shadow-lg transition">
+                                </a>
+                            </div>
+                        @endif
+
+                        <div class="text-center font-semibold text-lg mb-4">
                             Total: Rp{{ number_format($transaksi->total_harga, 0, ',', '.') }}
                         </div>
 
                         @auth
                             @if (auth()->user()->role->nama === 'Admin')
-                                <div class="flex justify-end gap-2">
-                                    <button
-                                        onclick="confirmStatus('{{ route('admin.transaksi.updateStatus', [$transaksi->id, 'proses']) }}', 'Proses')"
-                                        class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded">
-                                        Proses
-                                    </button>
+                                <div class="flex justify-between gap-2">
                                     <button
                                         onclick="confirmStatus('{{ route('admin.transaksi.updateStatus', [$transaksi->id, 'batal']) }}', 'Batalkan')"
                                         class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
                                         Batal
+                                    </button>
+
+                                    <button
+                                        onclick="confirmStatus('{{ route('admin.transaksi.updateStatus', [$transaksi->id, 'proses']) }}', 'Proses')"
+                                        class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded">
+                                        Proses
                                     </button>
                                 </div>
                             @endif
