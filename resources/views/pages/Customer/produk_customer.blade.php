@@ -168,6 +168,11 @@
             Swal.fire({
                 title: 'Masukkan Jumlah & Bukti Pembayaran',
                 html: `
+                    <div class="text-sm text-center mb-2">
+                        <p><strong>Transfer ke:</strong></p>
+                        <p>💳 <strong>BCA 7225016771</strong> a.n. <strong>ZULFA INDRA</strong></p>
+                        <p class="text-red-600 mt-2 font-semibold">*Jika belum ada pembayaran masuk, order tidak akan diproses.</p>
+                    </div>
                     <input id="qty-input" type="number" min="1" max="${stok}" value="1" class="swal2-input" placeholder="Jumlah">
                     <input type="file" id="bukti-input" class="swal2-file" accept="image/*">
                     <p id="total-harga" class="text-sm text-gray-600 mt-2">Total: Rp${harga.toLocaleString('id-ID')}</p>

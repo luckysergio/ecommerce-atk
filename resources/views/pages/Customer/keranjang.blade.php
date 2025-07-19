@@ -158,8 +158,15 @@
             Swal.fire({
                 title: 'Konfirmasi Checkout',
                 html: `
+                    <p class="mb-2">Silakan transfer ke:</p>
+                    <div class="text-center mb-2 text-sm leading-relaxed">
+                        💳 <strong>BCA 7225016771</strong><br>
+                        A/N <strong>ZULFA INDRA</strong><br>
+                        <span class="text-red-600 font-medium mt-2 block">*Jika belum ada pembayaran masuk, order tidak akan diproses.</span>
+                    </div>
+                    <hr class="my-2">
                     <p class="mb-2">Upload bukti pembayaran untuk checkout:</p>
-                    <div class="text-left font-medium mb-2">${detail}</div>
+                    <div class="text-center font-medium mb-2">${detail}</div>
                     <div class="mb-2 font-bold text-blue-600">Total: Rp${formatter.format(total)}</div>
                     <input type="file" id="buktiPembayaranInput" accept="image/*" class="swal2-file">
                 `,
